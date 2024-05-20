@@ -2,6 +2,8 @@ const express = require("express")
 const {UserZod,todoListZod,} = require("./type")
 const app = express();
 app.use(express.json());
+const cors = require("cors");
+app.use(cors());
 const jwt = require("jsonwebtoken");
 const {jwtPassword} = require("./config");
 const {UserMiddleware} = require("./middleware/usermiddleware");
@@ -86,6 +88,8 @@ app.post("/createTodoitem",async(req,res)=>{
     })  
 })
 
+
+
 //add todo item
 app.post("/addTodo/:ToDoId",UserMiddleware,async(req,res)=>{
     const username = req.username;  //from middleware
@@ -108,11 +112,10 @@ app.post("/addTodo/:ToDoId",UserMiddleware,async(req,res)=>{
 
 //get all todo
 app.get("/todos",UserMiddleware, async(req,res)=>{
-    const username = req.username; // get from usermiddleware
+    const username = req.username; // get from usermiddleware(didn't used )
     const user = await User.findOne({username});
     console.log(user);
-    const listItems = user.listItems;
-        
+    const listItems = user.listItems;  
         const list = await TodoList.find({
             _id: {
                 "$in": listItems
@@ -133,35 +136,16 @@ app.put("/complete/:id", UserMiddleware, async (req, res) => {
     const username = req.username;  // username got from middleware
     const todoItemId = req.params.id;  // todo list item id
     try {
-        const user = await User.findOne({ username });  // finding the user corresponding to username
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        const todoItem = user.listItems.find(item => item._id.toString() === todoItemId);// Update completion status
-        if (!todoItem) {
-            return res.status(404).json({ message: 'Todo item not found' });
-        }
-        TodoList.findOneAndUpdate({
-            _id:todoItem
+        await TodoList.findOneAndUpdate({
+            _id:todoItemId
         },{
             $set:{completion:'true'}
         })
-        let arr = TodoList.find({});
-        console.log(arr);
-        //todoItem.completion = true;// Update completion status
-        await user.save();
-        res.json({ message: 'Todo item updated successfully', todoItem });
+        res.json({ message: 'Todo item updated successfully' });
     } catch (error) {
-        console.error('Error updating todo item:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
-
-
-
-
 
 
 
